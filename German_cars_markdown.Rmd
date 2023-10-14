@@ -1,0 +1,322 @@
+---
+title: "German Cars Market"
+author: "Nour ElDeen Khaled"
+date: "10/11/2023"
+output: 
+   html_document:
+    toc: TRUE
+    toc_depth: 4
+    toc_float: TRUE
+    number_sections: TRUE
+    df_print: paged
+
+---
+
+# introduction
+
+I will be walking you through my R code of the Germany Cars Dataset that was scraped from [AutoScout24](https://www.autoscout24.com/) that i chose to be the case study project I completed as part of the Google Data Analytics Professional Certificate. This tutorial would be used to walk my team of analysts at the Germany Cars Dataset through my steps and thought processes while deriving insights from this data set. I will include project overview in the form of a statement of the business task, data overview, data clean up documentation, summary of data analysis, and a summary of insights that would be presented to you.
+
+If you have any questions, please feel free to email me at noureldeen.khaled.elsayed@gmail.com or via [LinkedIn](https://www.linkedin.com/in/nour-khaled-b04987272/).
+
+## Project Overview 
+
+In this project, I will be using Germany Cars dataset to explore the cars market in germany and how would different attributes affect on it.
+
+In this dataset, Some of the questions that needed to be asked are:
+
+1.  what is the average price for a german car by company the most expensive 15 and the cheapest 15 ?
+2.  what is the most common type of gear in cars in germany and what is its average price ?
+3.  what is the relationship between mileage and other columns ?
+
+## Data Overview
+
+### Source
+
+I have downloaded the Germany Cars Dataset from [kaggle on this link](https://www.kaggle.com/datasets/ander289386/cars-germany/data) and Dataset set was scrapped automaticlly By ZenRows From the website [AutoScout24](https://www.autoscout24.com/)
+
+Sources:
+
+[Kaggle Dataset](https://www.kaggle.com/datasets/ander289386/cars-germany/data)
+
+[Website scrapped from](https://www.autoscout24.com/).
+
+# Process Data
+
+**Libraries i used and needed for the project**  
+
+```{r }
+# install.packages("plotrix")
+library(plotrix)
+library(readr)
+library(tidyverse)
+
+```
+
+**read the CSV and print it** 
+```{r } 
+my_data <- read.csv("D:/coursera google data analysis/professional/Course 8- Capstone/Data sets downloaded/germany cars data set/autoscout24-germany-dataset.csv")
+my_data %>% 
+  head(15) %>% 
+  print()
+```
+
+# exploring and cleaning the data 
+``` {r }
+dim(my_data)
+
+#View(my_data)
+
+names(my_data)
+
+glimpse(my_data)
+
+unique(my_data$make)
+unique(my_data$fuel)  
+unique(my_data$gear)  
+unique(my_data$offerType)  
+unique(my_data$year)
+
+```
+ **Checking for the nulls** 
+```{r } 
+my_data %>% 
+  select(everything()) %>% 
+  filter(!complete.cases(.)) %>%
+  head(10)
+```
+ **checking for duplicates**
+``` {r} 
+# print(my_data[duplicated(my_data),])
+```
+**choosing the distinct values** 
+``` {r} 
+data_distinct <- distinct(my_data)
+data_distinct %>% 
+  head(10)
+```
+ **deleting the Na in the data  in the hp column because it doesn't matter** 
+```{r} 
+sum(is.na(data_distinct))
+
+colSums(is.na(data_distinct))
+
+My_cleaned_data <- na.omit(data_distinct)
+My_cleaned_data %>% 
+  head(10)
+```
+# Insights, Questions and answers
+#### **What are the most popular German car brands and models in the dataset and what are the least popular?**
+
+```{r} 
+counts <- My_cleaned_data %>%
+  group_by(make, model) %>%
+  summarize(count = n())
+```
+##### **most common cars in germany** 
+```{r}
+counts2 <- counts %>% 
+  arrange(desc(counts$count)) %>% 
+  head(10) %>% 
+  print()
+```
+##### **Plot for the most common cars**
+```{r}
+ggplot(data = counts2)+
+  geom_col(mapping = aes(x= model, y= count, fill = model))+
+  labs(x="model",y="count",xlab="model",ylab="count" )+
+  theme_classic()+
+  geom_text(aes(x = model, y = count - 50, label = count), size = 3) +
+  ggtitle("The Most Common Cars In Germany ")
+```
+
+##### **least common cars in germany**
+```{r}
+counts3 <- counts %>% 
+  arrange(desc(counts$count)) %>% 
+  tail(10) %>% 
+  print()
+```
+#### **What is the average price of German cars by year, make type?**
+ 
+##### **the average price for a german car over years**
+```{r}
+CarPriceByYear <- My_cleaned_data %>% 
+  group_by(year) %>%
+  summarize(average_price = round(mean(price)))  
+
+ggplot(data = CarPriceByYear)+
+  geom_point(mapping = aes(x= year, y= average_price), size = 4, alpha =0.9) +
+  geom_line(mapping = aes(x= year, y= average_price) ) +
+  geom_text(mapping = aes(x=year,y=average_price + 1000,label=average_price))+
+  labs(y = "Average Price", x = "Year", ylab = "Average Price") +
+  # Change the theme to make the plot more readable
+  theme_bw() +
+  ggtitle("Average price of cars over the years")
+```
+
+
+##### **the average price for a german car by company the most expensive 15 and the cheapest 15**
+```{r}
+# the most Expensive
+CarsPriceByMake1 <- My_cleaned_data %>% 
+  group_by(make) %>% 
+  summarize(average_price2 = round(mean(price))) %>% 
+  arrange(desc(average_price2)) %>% 
+  head(15) %>%  
+  print()
+```
+
+```{r}
+ggplot(data = CarsPriceByMake1)+
+  geom_col(mapping = aes(x=make, y=average_price2, fill = make))+
+  geom_text(aes(x=make,y=average_price2 - 30000, label = average_price2))+
+  labs(title = "Average Price by model")+
+  coord_flip()
+```
+
+```{r}
+# the cheapest
+CarsPriceByMake2 <- My_cleaned_data %>% 
+  group_by(make) %>% 
+  summarize(average_price2 = round(mean(price))) %>% 
+  arrange(average_price2) %>% 
+  head(15) %>% 
+  print()
+
+```
+
+```{r}
+ggplot(data = CarsPriceByMake2)+
+  geom_col(mapping = aes(x=make, y=average_price2, fill = make))+
+  geom_text(aes(x=make,y=average_price2 - 500, label = average_price2))+
+  coord_flip()
+```
+  
+####  **What is the average horsepower of German cars by Brand the 10 most and the least 9 ?** 
+```{r}
+AverageHpByMake1 <- My_cleaned_data %>% 
+  group_by(make) %>% 
+  summarize(average_hp = round(mean(hp))) %>% 
+  arrange(desc(average_hp)) %>% 
+  head(10) %>% 
+  print()
+```
+
+```{r}
+AverageHpByMake2 <- My_cleaned_data %>% 
+  group_by(make) %>% 
+  summarize(average_hp = round(mean(hp))) %>% 
+  arrange(average_hp) %>% 
+  head(9) %>% 
+  print()
+```
+
+#### **how does the Horse Power affect the price ?**
+```{r}
+Hp_and_Price <- My_cleaned_data %>% 
+  group_by(hp) %>% 
+  summarize(hp_price = round(mean(price))) %>% 
+  arrange(hp_price)
+
+ggplot(data = Hp_and_Price)+
+  geom_line(mapping = aes(x=hp,y=hp_price))
+# as we have seen that the Horse Power does slightly affect on the price but it really depend on the Brand 
+```
+
+#### **what is the most common type of gear in cars in germany and what is its average price ?** 
+```{r}
+# Here i  chose not to delete the blank values in the gear and instead i just filtered the column only
+avg_gear_price <- My_cleaned_data %>%
+  group_by(gear) %>% 
+  filter(gear == "Manual" | gear == "Automatic" | gear == "Semi-automatic" ) %>% 
+  summarize(avg_gear_pr = round(mean(price)), count = n()) %>% 
+  print()
+```
+
+```{r}
+# as we viewed in the last command that the semi-automatic count is very small --> (54)
+# so we won't visualize it or put it in the filter 
+gear_only <- My_cleaned_data %>%
+  group_by(gear) %>% 
+  filter(gear == "Manual" | gear == "Automatic") %>% 
+  summarize(count = n()) %>% 
+  arrange(count)
+# the semi-automatic is very small number nearly neglected so we didn't put it in the pie chart 
+percentage = round((gear_only$count / sum(gear_only$count)) * 100)
+the_label = paste(gear_only$gear,"-",percentage,"%")
+pie3D(gear_only$count,labels = the_label ,
+      main="the most common gear type in the german market",
+      explode = 0.0)
+```
+
+```{r}
+unique(My_cleaned_data$fuel)
+unique(My_cleaned_data$offerType)
+```
+#### **what are the most common fuel types in germany**
+```{r}
+fuel_Type <- My_cleaned_data %>% 
+  group_by(fuel) %>%
+  summarize(count = n() ) %>% 
+  arrange(desc(count)) %>% 
+  print()
+```
+
+##### **as we saw in the previuos View that the most common 3 fuel type in germany are :**
+- Gasoline   27,372
+- Diesel     14,749
+- Electric/Gasoline  1,051
+
+##### **the least common fuel types are :**
+- Ethanol   2
+- Hydrogen  1   
+
+
+#### **what is the most common offer type in germany ?** 
+```{r}
+offerType_data <- My_cleaned_data %>% 
+  group_by(offerType) %>% 
+  summarize(count = n()) %>% 
+  arrange(desc(count)) %>% 
+  print()
+```
+##### **so as we saw that the most common offer type is : Used** 
+
+#### **what is the relationship between mileage and other columns :**
+``` {r}
+# at first we saw that most of the cars in the dataset is USED 
+# now we are gonna filter the offerType by USED and see the average mileage 
+# and also we should see if the mileage affect the price or not 
+
+mileage_data <- My_cleaned_data %>% 
+  group_by(mileage) %>% 
+  filter(offerType == "Used") %>% 
+  summarize(av_pr = round(mean(price))) %>%
+  filter(mileage %in% seq(10000, nrow(My_cleaned_data) * 10000, by = 10000))
+
+
+ggplot(data = mileage_data)+
+  geom_smooth(mapping =  aes(x=mileage,y=av_pr), color = "green")+
+  theme_minimal()
+
+```
+
+
+#  Recommendations
+
+- **If you are buying a car in the German market and wanna know what is the best deal, it will really depend on your budget but there are some general recommendations that I can recommend.**
+- **According to my analysis that if you are willing to buy a car then you should start thinking of buying it now as the analysis have shown that the cars market is becoming more expensive every year.**
+- **the most common cars in germany is Volkswagen, so you will find a variety of models that suits your budget and desires.**  
+- **if you are interested in having a fast car with high horse power and you don't care about the price, so I would recommend :**
+-- **Ferrari** 
+-- **Lamborghini**
+-- **Corvette** 
+-- **Mclaren**
+- **If you are wandering what type of gear is the most common in germany and why, Let me tell you.**  
+-- **The most common gear type in germany is Manual because it is more fuel efficient and have a lower cost and provide more high performance** 
+
+In conclusion, my goal is to help anyone that wants to buy a car in the german market of cars and help you understand more about it. Following my recommendations will help you when choosing your next car.
+
+Again, please feel free to reach out to me for any comments or questions at noureldeen.khaled.elsayed@gmail.com or via [LinkedIn](https://www.linkedin.com/in/nour-khaled-b04987272/).
+
+Thank you!
